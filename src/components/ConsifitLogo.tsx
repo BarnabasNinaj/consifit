@@ -38,16 +38,6 @@ export function ConsifitLogo({
         strokeWidth="5"
         strokeLinecap="round"
       />
-      <circle cx="20" cy="32" r="3.5" fill="#a7f3d0" />
-      <circle cx="44" cy="32" r="3.5" fill="#a7f3d0" />
-      {/* Discipline ticks — showing up again */}
-      <path
-        d="M50 24v4M54 28v4M58 32v4"
-        stroke="#34d399"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        opacity="0.85"
-      />
     </svg>
   );
 
@@ -56,7 +46,7 @@ export function ConsifitLogo({
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
       {mark}
-      <span className="text-lg font-bold tracking-tight text-zinc-50">
+      <span className="text-lg font-bold tracking-tight text-emerald-400/90">
         Consifit
       </span>
     </span>

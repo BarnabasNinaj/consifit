@@ -4,16 +4,21 @@ import {
   DATA_VERSION,
   DEFAULT_APP_DATA,
   LEGACY_STORAGE_KEY,
+  normalizeRestExtendSeconds,
   STORAGE_KEY,
 } from '../data/defaults';
+import {
+  buildSampleSessions,
+  isSampleSessionId,
+} from '../data/sampleProgress';
 import type {
   AppData,
   AssistanceType,
   Exercise,
-  ExerciseCategory,
   Settings,
   WorkoutSession,
 } from '../types';
+import { isSameDay } from '../utils/format';
 import { useLocalStorage } from './useLocalStorage';
 
 function migrateLegacyStorage() {
@@ -36,15 +41,18 @@ function normalizeData(raw: AppData | null | undefined): AppData {
     version: DATA_VERSION,
     exercises:
       Array.isArray(raw.exercises) && raw.exercises.length > 0
-        ? raw.exercises
+        ? raw.exercises.map((ex) => ({
+            id: ex.id,
+            name: typeof ex.name === 'string' ? ex.name : 'Exercise',
+          }))
         : DEFAULT_APP_DATA.exercises,
     sessions: Array.isArray(raw.sessions) ? raw.sessions : [],
     settings: {
-      restSeconds: raw.settings?.restSeconds ?? DEFAULT_APP_DATA.settings.restSeconds,
-      bandPresets:
-        raw.settings?.bandPresets?.length
-          ? raw.settings.bandPresets
-          : DEFAULT_APP_DATA.settings.bandPresets,
+      restSeconds:
+        raw.settings?.restSeconds ?? DEFAULT_APP_DATA.settings.restSeconds,
+      restExtendSeconds: normalizeRestExtendSeconds(
+        raw.settings?.restExtendSeconds,
+      ),
     },
   };
 }
@@ -65,11 +73,10 @@ export function useWorkoutStore() {
   );
 
   const addExercise = useCallback(
-    (name: string, category: ExerciseCategory) => {
+    (name: string) => {
       const exercise: Exercise = {
         id: createId('ex'),
         name: name.trim(),
-        category,
       };
       update((prev) => ({
         ...prev,
@@ -81,11 +88,11 @@ export function useWorkoutStore() {
   );
 
   const editExercise = useCallback(
-    (id: string, name: string, category: ExerciseCategory) => {
+    (id: string, name: string) => {
       update((prev) => ({
         ...prev,
         exercises: prev.exercises.map((ex) =>
-          ex.id === id ? { ...ex, name: name.trim(), category } : ex,
+          ex.id === id ? { ...ex, name: name.trim() } : ex,
         ),
       }));
     },
@@ -154,11 +161,21 @@ export function useWorkoutStore() {
   const startOrResumeSession = useCallback(
     (exerciseId: string): WorkoutSession => {
       const prev = readStored();
-      const existing = prev.sessions.find(
-        (s) => s.exerciseId === exerciseId && !s.finishedAt,
+      // Day is the deadline: close anything still open from earlier days.
+      const sessions = prev.sessions.map((s) =>
+        !s.finishedAt && !isSameDay(s.startedAt)
+          ? { ...s, finishedAt: s.startedAt }
+          : s,
+      );
+
+      const existing = sessions.find(
+        (s) =>
+          s.exerciseId === exerciseId &&
+          !s.finishedAt &&
+          isSameDay(s.startedAt),
       );
       if (existing) {
-        setData(prev);
+        writeStored({ ...prev, sessions });
         return existing;
       }
 
@@ -168,10 +185,10 @@ export function useWorkoutStore() {
         startedAt: new Date().toISOString(),
         sets: [],
       };
-      writeStored({ ...prev, sessions: [...prev.sessions, session] });
+      writeStored({ ...prev, sessions: [...sessions, session] });
       return session;
     },
-    [readStored, setData, writeStored],
+    [readStored, writeStored],
   );
 
   const logSet = useCallback(
@@ -263,21 +280,29 @@ export function useWorkoutStore() {
     return JSON.stringify(appData, null, 2);
   }, [appData]);
 
-  const importData = useCallback(
-    (json: string): { ok: true } | { ok: false; error: string } => {
-      try {
-        const parsed = JSON.parse(json) as AppData;
-        if (!parsed || !Array.isArray(parsed.exercises)) {
-          return { ok: false, error: 'Invalid backup: missing exercises.' };
-        }
-        setData(normalizeData(parsed));
-        return { ok: true };
-      } catch {
-        return { ok: false, error: 'Could not parse JSON backup.' };
-      }
-    },
-    [setData],
-  );
+  const deleteLocalData = useCallback(() => {
+    setData(structuredClone(DEFAULT_APP_DATA));
+  }, [setData]);
+
+  const loadSampleProgress = useCallback(() => {
+    update((prev) => {
+      const withoutSamples = prev.sessions.filter(
+        (s) => !isSampleSessionId(s.id),
+      );
+      const samples = buildSampleSessions(prev.exercises);
+      return {
+        ...prev,
+        sessions: [...withoutSamples, ...samples],
+      };
+    });
+  }, [update]);
+
+  const clearSampleProgress = useCallback(() => {
+    update((prev) => ({
+      ...prev,
+      sessions: prev.sessions.filter((s) => !isSampleSessionId(s.id)),
+    }));
+  }, [update]);
 
   const getSession = useCallback(
     (sessionId: string) => appData.sessions.find((s) => s.id === sessionId),
@@ -304,7 +329,9 @@ export function useWorkoutStore() {
     discardEmptySession,
     updateSettings,
     exportData,
-    importData,
+    deleteLocalData,
+    loadSampleProgress,
+    clearSampleProgress,
     getSession,
     getOpenSession,
   };

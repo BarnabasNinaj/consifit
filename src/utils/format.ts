@@ -3,7 +3,7 @@ import type { SetLog } from '../types';
 export function formatSetLabel(set: SetLog, index: number): string {
   const assistance =
     set.assistance === 'bodyweight'
-      ? 'BW'
+      ? 'Body'
       : set.bandLevel
         ? `${set.bandLevel} Band`
         : 'Band';

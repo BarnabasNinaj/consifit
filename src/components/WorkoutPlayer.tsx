@@ -1,31 +1,40 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, CheckCircle2, ChevronRight, Minus, Plus } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Minus,
+  Plus,
+} from 'lucide-react';
 import type { AssistanceType } from '../types';
 import type { WorkoutStore } from '../hooks/useWorkoutStore';
 import { useRestTimer } from '../hooks/useRestTimer';
 import { formatDuration, isSameDay } from '../utils/format';
-import { getPreviousSession, sumSets } from '../utils/stats';
-import { PageTitle } from './PageTitle';
+import {
+  getLastSessionSummary,
+  getPreviousSession,
+  sumSets,
+} from '../utils/stats';
 
 interface WorkoutPlayerProps {
   store: WorkoutStore;
-  startIndex: number;
+  /** Queue index to open first (tap from Train Hard). */
+  startIndex?: number;
   onExit: () => void;
 }
 
 export function WorkoutPlayer({
   store,
-  startIndex,
+  startIndex = 0,
   onExit,
 }: WorkoutPlayerProps) {
   const exercises = store.data.exercises;
-  const [index, setIndex] = useState(startIndex);
-  const [complete, setComplete] = useState(false);
+  const [index, setIndex] = useState(() => {
+    if (exercises.length === 0) return 0;
+    return Math.min(Math.max(startIndex, 0), exercises.length - 1);
+  });
   const [reps, setReps] = useState(8);
   const [assistance, setAssistance] = useState<AssistanceType>('bodyweight');
-  const [bandLevel, setBandLevel] = useState(
-    store.data.settings.bandPresets[0] ?? 'Light / Red',
-  );
 
   const timer = useRestTimer(store.data.settings.restSeconds);
   const exercise = exercises[index] ?? null;
@@ -33,12 +42,12 @@ export function WorkoutPlayer({
     timer.phase === 'running' ||
     timer.phase === 'paused' ||
     timer.phase === 'done';
+  const queueLen = exercises.length;
 
   useEffect(() => {
     if (!exercise) return;
     const session = store.startOrResumeSession(exercise.id);
     setAssistance('bodyweight');
-    setComplete(false);
     timer.dismiss();
 
     const prev = getPreviousSession(
@@ -50,7 +59,7 @@ export function WorkoutPlayer({
       setReps(prev.sets[0].reps);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercise?.id]);
+  }, [exercise?.id, index]);
 
   useEffect(() => {
     if (timer.phase !== 'done') return;
@@ -67,8 +76,18 @@ export function WorkoutPlayer({
       .sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
   }, [exercise, store.data.sessions]);
 
-  const setNumber = todaySets.length + 1;
   const todayTotals = todaySets.length > 0 ? sumSets(todaySets) : null;
+  const todayReps = todayTotals?.totalReps ?? 0;
+  const todaySetCount = todaySets.length;
+  const lastSession = useMemo(
+    () =>
+      getLastSessionSummary(
+        store.data.sessions,
+        exercise?.id ?? '',
+      ),
+    [exercise?.id, store.data.sessions],
+  );
+  const lastTotals = lastSession.totals;
   const progress =
     timer.duration > 0 ? timer.remaining / timer.duration : 0;
 
@@ -77,25 +96,14 @@ export function WorkoutPlayer({
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <p className="text-lg font-semibold text-zinc-100">No exercises yet</p>
         <p className="mt-2 text-sm text-zinc-500">
-          Add some in the menu to start training.
-        </p>
-      </div>
-    );
-  }
-
-  if (complete) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-        <p className="text-3xl font-bold text-zinc-50">Done</p>
-        <p className="mt-2 text-sm text-zinc-400">
-          Nice work. Head back when you&apos;re ready.
+          Add some in Settings to start training.
         </p>
         <button
           type="button"
           onClick={onExit}
-          className="mt-8 min-h-14 w-full max-w-xs rounded-2xl bg-emerald-600 text-base font-bold text-white active:bg-emerald-500"
+          className="mt-8 min-h-14 w-full max-w-xs rounded-2xl bg-emerald-500 text-base font-bold text-zinc-950 active:bg-emerald-400"
         >
-          Train Hard
+          Back to Train Hard
         </button>
       </div>
     );
@@ -104,221 +112,244 @@ export function WorkoutPlayer({
   const handleLog = () => {
     if (!exercise || reps < 1) return;
     const active = store.startOrResumeSession(exercise.id);
-    store.logSet(
-      active.id,
-      reps,
-      assistance,
-      assistance === 'band' ? bandLevel : undefined,
-    );
+    store.logSet(active.id, reps, assistance);
     timer.start(store.data.settings.restSeconds);
   };
 
-  const handleNextExercise = () => {
-    if (!exercise) return;
-    const active =
-      store.data.sessions.find(
-        (s) => s.exerciseId === exercise.id && !s.finishedAt,
-      ) ?? store.startOrResumeSession(exercise.id);
-
-    if (active.sets.length > 0) {
-      store.finishWorkout(active.id);
-    } else {
-      store.discardEmptySession(active.id);
+  const hop = (delta: number) => {
+    if (queueLen === 0) return;
+    // Drop empty shells; keep today's sets open until the day rolls over.
+    if (exercise) {
+      const open = store.data.sessions.find(
+        (s) =>
+          s.exerciseId === exercise.id &&
+          !s.finishedAt &&
+          isSameDay(s.startedAt),
+      );
+      if (open && open.sets.length === 0) {
+        store.discardEmptySession(open.id);
+      }
     }
     timer.dismiss();
-
-    if (index >= exercises.length - 1) {
-      setComplete(true);
-      return;
-    }
-    setIndex((i) => i + 1);
+    setIndex((i) => (i + delta + queueLen) % queueLen);
   };
 
   return (
-    <div className="flex flex-1 flex-col px-5 pb-[max(1rem,env(safe-area-inset-bottom))]">
-      {/* ── Context (lowlight) ───────────────────────────── */}
-      <header className="shrink-0">
-        <div className="mb-2 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onExit}
-            className="text-[11px] font-medium tracking-wide text-zinc-600 active:text-zinc-400"
-          >
-            ← Train Hard
-          </button>
-          <p className="text-[11px] tabular-nums text-zinc-600">
-            {index + 1}/{exercises.length} · Set {setNumber}
+    <div className="flex flex-1 flex-col px-5 pb-2">
+      <header
+        className={`shrink-0 transition-opacity duration-300 ${
+          resting ? 'pointer-events-none opacity-25' : 'opacity-100'
+        }`}
+      >
+        <div className="mb-3 flex items-baseline gap-2.5">
+          <h2 className="min-w-0 flex-1 truncate text-[1.65rem] font-bold leading-tight tracking-tight text-zinc-50">
+            {exercise.name}
+          </h2>
+          <p className="shrink-0 text-sm font-medium tabular-nums text-zinc-500">
+            {index + 1}/{queueLen}
           </p>
         </div>
 
-        <PageTitle title={exercise.name} />
-
-        {/* Today — compact readout, not a competing card */}
-        <div className="-mt-2 flex items-baseline gap-2 border-b border-zinc-900 pb-3">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
-            Today
-          </span>
-          {todayTotals ? (
-            <>
-              <span className="text-lg font-semibold tabular-nums text-zinc-200">
-                {todayTotals.totalReps}
-              </span>
-              <span className="min-w-0 truncate text-sm text-zinc-500">
-                {todaySets.map((s) => s.reps).join(' · ')}
-                <span className="text-zinc-700">
-                  {' '}
-                  · {todayTotals.bodyweightReps}bw
-                  {todayTotals.bandReps > 0
-                    ? ` / ${todayTotals.bandReps}band`
-                    : ''}
+        <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-zinc-800/70 bg-zinc-950/40 backdrop-blur-[2px]">
+          <div className="border-r border-zinc-800/70 px-3 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
+              Last
+              {lastSession.label ? (
+                <span className="ml-1 font-medium normal-case tracking-normal text-zinc-500">
+                  {lastSession.label}
                 </span>
-              </span>
-            </>
-          ) : (
-            <span className="text-sm text-zinc-700">—</span>
-          )}
+              ) : null}
+            </p>
+            <p className="mt-2 font-mono text-lg font-bold leading-none tabular-nums text-zinc-50">
+              {lastTotals?.totalReps ?? 0}{' '}
+              <span className="text-xs font-semibold text-zinc-500">reps</span>
+            </p>
+            <p className="mt-1 text-xs tabular-nums text-zinc-500">
+              {lastTotals?.setCount ?? 0} set
+              {(lastTotals?.setCount ?? 0) === 1 ? '' : 's'}
+            </p>
+            <div className="mt-2 space-y-0.5 text-xs tabular-nums leading-tight">
+              <p>
+                <span className="font-semibold text-body">
+                  {lastTotals?.bodyweightReps ?? 0}
+                </span>{' '}
+                <span className="text-body/55">body</span>
+              </p>
+              <p>
+                <span className="font-semibold text-band">
+                  {lastTotals?.bandReps ?? 0}
+                </span>{' '}
+                <span className="text-band/55">band</span>
+              </p>
+            </div>
+          </div>
+          <div className="px-3 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
+              Today
+            </p>
+            <p className="mt-2 font-mono text-lg font-bold leading-none tabular-nums text-zinc-50">
+              {todayReps}{' '}
+              <span className="text-xs font-semibold text-zinc-500">reps</span>
+            </p>
+            <p className="mt-1 text-xs tabular-nums text-zinc-500">
+              {todaySetCount} set{todaySetCount === 1 ? '' : 's'}
+            </p>
+            <div className="mt-2 space-y-0.5 text-xs tabular-nums leading-tight">
+              <p>
+                <span className="font-semibold text-body">
+                  {todayTotals?.bodyweightReps ?? 0}
+                </span>{' '}
+                <span className="text-body/55">body</span>
+              </p>
+              <p>
+                <span className="font-semibold text-band">
+                  {todayTotals?.bandReps ?? 0}
+                </span>{' '}
+                <span className="text-band/55">band</span>
+              </p>
+            </div>
+          </div>
         </div>
       </header>
 
-      {/* ── Decision zone (highlight) ────────────────────── */}
-      <div
-        className={`flex min-h-0 flex-1 flex-col justify-center gap-4 py-4 transition-opacity ${
-          resting ? 'opacity-45' : 'opacity-100'
-        }`}
-      >
-        <div className="mx-auto flex w-full max-w-xs rounded-full bg-zinc-900/80 p-0.5 ring-1 ring-zinc-800/80">
-          <button
-            type="button"
-            onClick={() => setAssistance('bodyweight')}
-            className={`min-h-9 flex-1 rounded-full text-xs font-semibold transition ${
-              assistance === 'bodyweight'
-                ? 'bg-zinc-700 text-zinc-100'
-                : 'text-zinc-500'
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col justify-center">
+          <div
+            className={`flex shrink-0 flex-col gap-3 transition-opacity duration-300 ${
+              resting ? 'pointer-events-none opacity-20' : 'opacity-100'
             }`}
           >
-            Bodyweight
-          </button>
-          <button
-            type="button"
-            onClick={() => setAssistance('band')}
-            className={`min-h-9 flex-1 rounded-full text-xs font-semibold transition ${
-              assistance === 'band'
-                ? 'bg-sky-600/90 text-white'
-                : 'text-zinc-500'
-            }`}
-          >
-            Band
-          </button>
-        </div>
-
-        {assistance === 'band' && (
-          <div className="flex justify-center gap-1.5 overflow-x-auto">
-            {store.data.settings.bandPresets.map((preset) => (
+            <div className="mx-auto flex w-full max-w-xs rounded-full bg-zinc-950/50 p-0.5 ring-1 ring-zinc-800/70">
               <button
-                key={preset}
                 type="button"
-                onClick={() => setBandLevel(preset)}
-                className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                  bandLevel === preset
-                    ? 'bg-sky-500/20 text-sky-300'
-                    : 'text-zinc-600'
+                onClick={() => setAssistance('bodyweight')}
+                className={`min-h-9 flex-1 rounded-full text-xs font-semibold transition ${
+                  assistance === 'bodyweight'
+                    ? 'bg-body/15 text-body ring-1 ring-body/35'
+                    : 'text-zinc-500'
                 }`}
               >
-                {preset.split(' / ')[0]}
+                Body
               </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center justify-center gap-4">
-          <button
-            type="button"
-            onClick={() => setReps((r) => Math.max(1, r - 1))}
-            className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-300 ring-1 ring-zinc-800 active:bg-zinc-800"
-            aria-label="Decrease reps"
-          >
-            <Minus className="h-6 w-6" />
-          </button>
-          <div className="min-w-[4.5rem] text-center">
-            <p className="font-mono text-[3.5rem] font-bold leading-none tabular-nums text-zinc-50">
-              {reps}
-            </p>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-600">
-              reps
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setReps((r) => r + 1)}
-            className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-300 ring-1 ring-zinc-800 active:bg-zinc-800"
-            aria-label="Increase reps"
-          >
-            <Plus className="h-6 w-6" />
-          </button>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleLog}
-          disabled={resting && timer.phase === 'running'}
-          className="mx-auto flex min-h-14 w-full max-w-xs items-center justify-center gap-2 rounded-2xl bg-emerald-500 text-base font-bold text-zinc-950 shadow-[0_0_24px_rgba(16,185,129,0.25)] active:bg-emerald-400 disabled:opacity-40"
-        >
-          <Check className="h-5 w-5" strokeWidth={2.5} />
-          Save
-        </button>
-      </div>
-
-      {/* ── Rest (amber waiting state — only when active) ── */}
-      {resting && (
-        <section className="mb-3 shrink-0 rounded-2xl bg-amber-500/8 px-3.5 py-3 ring-1 ring-amber-500/25">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-500/80">
-                Resting
-              </p>
-              <p className="mt-0.5 font-mono text-3xl font-bold tabular-nums text-amber-100">
-                {formatDuration(timer.remaining)}
-              </p>
+              <button
+                type="button"
+                onClick={() => setAssistance('band')}
+                className={`min-h-9 flex-1 rounded-full text-xs font-semibold transition ${
+                  assistance === 'band'
+                    ? 'bg-band/15 text-band ring-1 ring-band/35'
+                    : 'text-zinc-500'
+                }`}
+              >
+                Band
+              </button>
             </div>
+
+            <div className="flex items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => setReps((r) => Math.max(1, r - 1))}
+                className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-300 ring-1 ring-zinc-800 active:bg-zinc-800"
+                aria-label="Decrease reps"
+              >
+                <Minus className="h-6 w-6" />
+              </button>
+              <div className="min-w-[4.5rem] text-center">
+                <p className="font-mono text-[3.5rem] font-bold leading-none tabular-nums text-zinc-50">
+                  {reps}
+                </p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-600">
+                  reps
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReps((r) => r + 1)}
+                className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-300 ring-1 ring-zinc-800 active:bg-zinc-800"
+                aria-label="Increase reps"
+              >
+                <Plus className="h-6 w-6" />
+              </button>
+            </div>
+
             <button
               type="button"
-              onClick={() => timer.dismiss()}
-              className="flex min-h-12 items-center gap-1.5 rounded-xl bg-amber-500 px-4 text-sm font-bold text-zinc-950 active:bg-amber-400"
+              onClick={handleLog}
+              disabled={resting && timer.phase === 'running'}
+              className="mx-auto flex min-h-14 w-full max-w-xs items-center justify-center rounded-2xl bg-emerald-500 text-base font-bold text-zinc-950 shadow-[0_0_24px_rgba(16,185,129,0.28)] active:bg-emerald-400 disabled:opacity-40"
             >
-              <CheckCircle2 className="h-4 w-4" />
-              Ready
+              Done
             </button>
           </div>
-          <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-zinc-900">
-            <div
-              className="h-full rounded-full bg-amber-500 transition-[width] duration-1000 ease-linear"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </div>
-          <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-            {([10, 20, 30] as const).map((sec) => (
-              <button
-                key={sec}
-                type="button"
-                onClick={() => timer.extend(sec)}
-                className="min-h-9 rounded-lg bg-zinc-950/50 text-xs font-semibold text-amber-200/70 active:bg-zinc-900 active:text-amber-100"
-              >
-                +{sec}s
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+        </div>
 
-      {/* ── Exit lane (lowlight) ─────────────────────────── */}
-      <button
-        type="button"
-        onClick={handleNextExercise}
-        className="flex min-h-12 w-full shrink-0 items-center justify-center gap-1 rounded-xl text-sm font-medium text-zinc-600 ring-1 ring-zinc-900 active:bg-zinc-900/60 active:text-zinc-400"
+        <div className="flex min-h-0 flex-1 flex-col justify-center">
+          <div className="mx-auto h-[11.5rem] max-h-[11.5rem] min-h-0 w-full max-w-sm shrink-0">
+            {resting ? (
+              <section className="rest-pulse flex h-full max-h-full flex-col justify-center rounded-2xl border bg-amber-500/[0.07] px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-500/80">
+                      Resting
+                    </p>
+                    <p className="rest-digit-pulse mt-1 font-mono text-[2.75rem] font-bold leading-none tabular-nums tracking-tight text-amber-50">
+                      {formatDuration(timer.remaining)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => timer.dismiss()}
+                    className="flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 text-sm font-bold text-zinc-950 active:bg-amber-400"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Ready
+                  </button>
+                </div>
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-900">
+                  <div
+                    className="h-full rounded-full bg-amber-500 transition-[width] duration-1000 ease-linear"
+                    style={{ width: `${progress * 100}%` }}
+                  />
+                </div>
+                <div className="mt-2.5 grid grid-cols-2 gap-1.5">
+                  {store.data.settings.restExtendSeconds.map((sec, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => timer.extend(sec)}
+                      className="min-h-9 rounded-lg bg-zinc-950/50 text-xs font-semibold text-amber-200/70 active:bg-zinc-900 active:text-amber-100"
+                    >
+                      +{sec}s
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={`mt-2 grid h-14 shrink-0 grid-cols-2 gap-2 transition-opacity duration-300 ${
+          resting ? 'opacity-30' : 'opacity-100'
+        }`}
       >
-        {index >= exercises.length - 1 ? 'Finish workout' : 'Next exercise'}
-        <ChevronRight className="h-4 w-4" />
-      </button>
+        <button
+          type="button"
+          onClick={() => hop(-1)}
+          className="flex h-full items-center justify-center gap-1.5 rounded-2xl bg-emerald-500/10 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-500/25 active:bg-emerald-500/18 active:text-emerald-200"
+        >
+          <ChevronLeft className="h-4 w-4 shrink-0" />
+          Previous
+        </button>
+        <button
+          type="button"
+          onClick={() => hop(1)}
+          className="flex h-full items-center justify-center gap-1.5 rounded-2xl bg-emerald-500/10 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-500/25 active:bg-emerald-500/18 active:text-emerald-200"
+        >
+          Next
+          <ChevronRight className="h-4 w-4 shrink-0" />
+        </button>
+      </div>
     </div>
   );
 }

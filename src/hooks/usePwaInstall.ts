@@ -7,11 +7,19 @@ interface BeforeInstallPromptEvent extends Event {
 
 function isStandaloneDisplay(): boolean {
   if (typeof window === 'undefined') return false;
-  const media = window.matchMedia('(display-mode: standalone)').matches;
+  // Chrome/Android installed PWA, plus iOS Add to Home Screen
+  const displayStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: minimal-ui)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches;
   const iosStandalone =
     'standalone' in navigator &&
     Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-  return media || iosStandalone;
+  // Android TWA / installed webapk referrer
+  const androidApp =
+    typeof document !== 'undefined' &&
+    document.referrer.startsWith('android-app://');
+  return displayStandalone || iosStandalone || androidApp;
 }
 
 function isIos(): boolean {

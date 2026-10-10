@@ -5,23 +5,27 @@ export const STORAGE_KEY = 'consifit-data';
 export const LEGACY_STORAGE_KEY = 'consifitbar-data';
 export const DATA_VERSION = 1;
 
-export const DEFAULT_BAND_PRESETS = [
-  'Light / Red',
-  'Medium / Black',
-  'Heavy / Green',
-];
-
 export const DEFAULT_SETTINGS: Settings = {
   restSeconds: 90,
-  bandPresets: DEFAULT_BAND_PRESETS,
+  restExtendSeconds: [15, 30],
 };
 
+export function normalizeRestExtendSeconds(raw: unknown): [number, number] {
+  const fallback = DEFAULT_SETTINGS.restExtendSeconds;
+  const list = Array.isArray(raw) ? raw : fallback;
+  return [0, 1].map((i) => {
+    const n = Math.round(Number(list[i]));
+    if (!Number.isFinite(n)) return fallback[i]!;
+    return Math.max(5, Math.min(180, n));
+  }) as [number, number];
+}
+
 export const DEFAULT_EXERCISES: Exercise[] = [
-  { id: 'ex-standard-pullups', name: 'Standard Pull-Ups', category: 'Pull' },
-  { id: 'ex-chinups', name: 'Chin-Ups', category: 'Pull' },
-  { id: 'ex-wide-grip', name: 'Wide-Grip Pull-Ups', category: 'Pull' },
-  { id: 'ex-commando', name: 'Commando Pull-Ups', category: 'Pull' },
-  { id: 'ex-hanging-leg-raises', name: 'Hanging Leg Raises', category: 'Core' },
+  { id: 'ex-standard-pullups', name: 'Standard Pull-Ups' },
+  { id: 'ex-chinups', name: 'Chin-Ups' },
+  { id: 'ex-wide-grip', name: 'Wide-Grip Pull-Ups' },
+  { id: 'ex-commando', name: 'Commando Pull-Ups' },
+  { id: 'ex-hanging-leg-raises', name: 'Hanging Leg Raises' },
 ];
 
 export const DEFAULT_APP_DATA: AppData = {

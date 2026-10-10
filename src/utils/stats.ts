@@ -9,7 +9,6 @@ import {
   formatDateLabel,
   isSameDay,
   todayKey,
-  yesterdayKey,
 } from './format';
 
 export function sumSets(sets: SetLog[]): SessionTotals {
@@ -46,8 +45,14 @@ export function getPreviousSession(
   exerciseId: string,
   excludeSessionId?: string,
 ): WorkoutSession | undefined {
-  return getExerciseSessions(sessions, exerciseId).find(
-    (s) => s.id !== excludeSessionId && Boolean(s.finishedAt),
+  // Prefer a prior calendar day for defaults; today stays open until day end.
+  return (
+    getExerciseSessions(sessions, exerciseId).find(
+      (s) => s.id !== excludeSessionId && !isSameDay(s.startedAt),
+    ) ??
+    getExerciseSessions(sessions, exerciseId).find(
+      (s) => s.id !== excludeSessionId,
+    )
   );
 }
 
@@ -74,25 +79,40 @@ export function getDayTotalsForExercise(
   return sumSets(daySets);
 }
 
-export function getTodayYesterdayTotals(
+/** Most recent session with sets that is not from today. */
+export function getLastSessionSummary(
   sessions: WorkoutSession[],
   exerciseId: string,
-): { today: number; yesterday: number } {
+): {
+  totals: SessionTotals;
+  label: string | null;
+} {
+  const empty: SessionTotals = {
+    bodyweightReps: 0,
+    bandReps: 0,
+    totalReps: 0,
+    setCount: 0,
+  };
+  const last = getExerciseSessions(sessions, exerciseId).find(
+    (s) => !isSameDay(s.startedAt),
+  );
+  if (!last) return { totals: empty, label: null };
   return {
-    today: getDayTotalsForExercise(sessions, exerciseId, todayKey()).totalReps,
-    yesterday: getDayTotalsForExercise(
-      sessions,
-      exerciseId,
-      yesterdayKey(),
-    ).totalReps,
+    totals: sumSets(last.sets),
+    label: formatDateLabel(last.finishedAt ?? last.startedAt),
   };
 }
 
-export function getYesterdayTotalsForExercise(
+export function getTodayLastTotals(
   sessions: WorkoutSession[],
   exerciseId: string,
-): SessionTotals {
-  return getDayTotalsForExercise(sessions, exerciseId, yesterdayKey());
+): { today: number; last: number; lastLabel: string | null } {
+  const last = getLastSessionSummary(sessions, exerciseId);
+  return {
+    today: getDayTotalsForExercise(sessions, exerciseId, todayKey()).totalReps,
+    last: last.totals.totalReps,
+    lastLabel: last.label,
+  };
 }
 
 export function compareToPrevious(
@@ -129,11 +149,71 @@ export function getProgressionData(
   });
 }
 
+export interface ExerciseProgressStats {
+  workoutCount: number;
+  lastTotal: number;
+  lastBw: number;
+  lastBand: number;
+  lastLabel: string | null;
+  bestTotal: number;
+  bestLabel: string | null;
+  /** Last workout total minus previous workout total */
+  vsPrevious: number | null;
+}
+
+export function getExerciseProgressStats(
+  sessions: WorkoutSession[],
+  exerciseId: string,
+): ExerciseProgressStats {
+  const finished = getExerciseSessions(sessions, exerciseId).filter((s) =>
+    Boolean(s.finishedAt),
+  );
+
+  if (finished.length === 0) {
+    return {
+      workoutCount: 0,
+      lastTotal: 0,
+      lastBw: 0,
+      lastBand: 0,
+      lastLabel: null,
+      bestTotal: 0,
+      bestLabel: null,
+      vsPrevious: null,
+    };
+  }
+
+  const withTotals = finished.map((session) => {
+    const totals = sumSets(session.sets);
+    const date = session.finishedAt ?? session.startedAt;
+    return { totals, date };
+  });
+
+  const last = withTotals[0]!;
+  const previous = withTotals[1];
+  let best = withTotals[0]!;
+  for (const row of withTotals) {
+    if (row.totals.totalReps > best.totals.totalReps) best = row;
+  }
+
+  return {
+    workoutCount: finished.length,
+    lastTotal: last.totals.totalReps,
+    lastBw: last.totals.bodyweightReps,
+    lastBand: last.totals.bandReps,
+    lastLabel: formatDateLabel(last.date),
+    bestTotal: best.totals.totalReps,
+    bestLabel: formatDateLabel(best.date),
+    vsPrevious: previous
+      ? last.totals.totalReps - previous.totals.totalReps
+      : null,
+  };
+}
+
 export function formatDeltaPill(bwDelta: number, bandDelta: number): string {
   const parts: string[] = [];
   const fmt = (n: number, label: string) =>
     `${n >= 0 ? '+' : ''}${n} ${label}`;
-  parts.push(fmt(bwDelta, 'BW reps'));
+  parts.push(fmt(bwDelta, 'Body reps'));
   parts.push(fmt(bandDelta, 'Band reps'));
   return `${parts.join(', ')} vs. last time`;
 }

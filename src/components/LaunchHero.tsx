@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { ConsifitLogo } from './ConsifitLogo';
 
 const ROASTS = [
   'You weak, bitch.',
@@ -75,46 +74,24 @@ export function LaunchHero({ onEnter }: LaunchHeroProps) {
   const [pressed, setPressed] = useState(false);
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(2.5rem,env(safe-area-inset-top))]">
-      {/* Atmosphere */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 90% 55% at 50% 15%, rgba(16,185,129,0.16), transparent 55%), radial-gradient(ellipse 70% 40% at 80% 90%, rgba(245,158,11,0.08), transparent)',
-        }}
-      />
-
-      <div className="relative flex items-center gap-2.5">
-        <ConsifitLogo className="h-9 w-9" />
-        <div>
-          <p className="text-sm font-bold tracking-tight text-zinc-50">
-            Consifit
-          </p>
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-zinc-500">
-            Consistently fit
-          </p>
-        </div>
-      </div>
-
-      <div className="relative flex flex-1 flex-col justify-center py-8">
-        <p className="mb-4 text-sm font-medium text-zinc-500">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden overscroll-none px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+      <div className="flex min-h-0 flex-1 flex-col justify-center py-4">
+        <p className="mb-3 shrink-0 text-sm font-medium text-zinc-500">
           Before you touch the bar…
         </p>
-        <h1 className="max-w-[14ch] text-[2.75rem] font-bold leading-[1.05] tracking-tight text-zinc-50 sm:text-5xl">
+        <h1 className="max-w-[14ch] text-[clamp(1.85rem,7.2vh,2.75rem)] font-bold leading-[1.05] tracking-tight text-balance text-zinc-50">
           {line}
         </h1>
       </div>
 
-      <div className="relative flex flex-col items-center gap-4">
+      <div className="flex shrink-0 flex-col items-center gap-3 pb-1">
         <button
           type="button"
           onPointerDown={() => setPressed(true)}
           onPointerUp={() => setPressed(false)}
           onPointerLeave={() => setPressed(false)}
           onClick={onEnter}
-          className={`flex h-36 w-36 flex-col items-center justify-center rounded-full bg-emerald-500 text-zinc-950 shadow-[0_0_48px_rgba(16,185,129,0.35)] transition duration-150 active:scale-95 ${
+          className={`flex size-[min(9rem,28vmin)] touch-manipulation flex-col items-center justify-center rounded-full bg-emerald-500 text-zinc-950 shadow-[0_0_48px_rgba(16,185,129,0.35)] transition duration-150 active:scale-95 ${
             pressed ? 'scale-95' : 'scale-100'
           }`}
           aria-label="Let's go — open Train Hard"

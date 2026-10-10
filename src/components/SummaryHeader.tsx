@@ -27,13 +27,13 @@ export function SummaryHeader({ today, previous, hasPrevious }: SummaryHeaderPro
         </div>
         <div className="mb-0.5 flex flex-1 gap-3 text-sm">
           <div>
-            <p className="font-semibold tabular-nums text-emerald-400">
+            <p className="font-semibold tabular-nums text-body">
               {today.bodyweightReps}
             </p>
-            <p className="text-xs text-zinc-500">BW</p>
+            <p className="text-xs text-zinc-500">Body</p>
           </div>
           <div>
-            <p className="font-semibold tabular-nums text-sky-400">
+            <p className="font-semibold tabular-nums text-band">
               {today.bandReps}
             </p>
             <p className="text-xs text-zinc-500">Band</p>

@@ -3,6 +3,15 @@
 @theme {
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /*
+    Emerald = actions. Body = amber, Band = cyan (same as charts).
+  */
+  --color-action: #10b981;
+  --color-body: #fbbf24;
+  --color-band: #22d3ee;
+  --color-rest: #f59e0b;
+  --color-danger: #f43f5e;
 }
 
 html {
@@ -10,15 +19,22 @@ html {
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
   touch-action: manipulation;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
   margin: 0;
-  min-height: 100dvh;
+  height: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
   font-family: var(--font-sans);
   background: #09090b;
   color: #fafafa;
-  overscroll-behavior-y: none;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -27,24 +43,28 @@ input,
 textarea {
   user-select: text;
   -webkit-user-select: text;
-  font-size: 16px; /* prevents iOS zoom on focus */
+  font-size: 16px;
 }
 
 #root {
-  min-height: 100dvh;
+  height: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   display: flex;
   justify-content: center;
 }
 
-/* Phone-width shell — keeps desktop preview looking like a device */
 .app-shell {
   width: 100%;
-  max-width: 28rem; /* max-w-md */
+  max-width: 28rem;
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
 }
 
 @media (min-width: 32rem) {
   .app-shell {
-    min-height: 100dvh;
     box-shadow:
       0 0 0 1px rgba(63, 63, 70, 0.8),
       0 25px 50px -12px rgba(0, 0, 0, 0.55);
@@ -55,7 +75,17 @@ textarea {
   bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 
-/* Prefer dynamic viewport height when available (mobile browser chrome) */
+/* Keep touch scrolling; hide the scrollbar gutter/track */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 @supports (height: 100dvh) {
   .sheet-panel[data-h='94'] {
     height: 94dvh;
@@ -68,7 +98,7 @@ textarea {
   }
 }
 
-/* Subtle atmospheric depth without flat single-color feel */
+/* Base wash — hero-adjacent, quieter than per-screen Atmosphere */
 body::before {
   content: '';
   position: fixed;
@@ -76,7 +106,54 @@ body::before {
   pointer-events: none;
   z-index: -1;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.12), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(14, 165, 233, 0.06), transparent),
+    radial-gradient(
+      ellipse 85% 50% at 50% -15%,
+      rgba(16, 185, 129, 0.08),
+      transparent 55%
+    ),
     #09090b;
+}
+
+@keyframes rest-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+    border-color: rgba(245, 158, 11, 0.22);
+    background-color: rgba(245, 158, 11, 0.06);
+  }
+  50% {
+    box-shadow: 0 0 32px 4px rgba(245, 158, 11, 0.22);
+    border-color: rgba(245, 158, 11, 0.5);
+    background-color: rgba(245, 158, 11, 0.11);
+  }
+}
+
+@keyframes rest-digit-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.78;
+    transform: scale(1.04);
+  }
+}
+
+.rest-pulse {
+  animation: rest-pulse 1.8s ease-in-out infinite;
+}
+
+.rest-digit-pulse {
+  display: inline-block;
+  transform-origin: left center;
+  animation: rest-digit-pulse 1.8s ease-in-out infinite;
+  text-shadow: 0 0 24px rgba(251, 191, 36, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rest-pulse,
+  .rest-digit-pulse {
+    animation: none;
+  }
 }

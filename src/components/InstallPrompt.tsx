@@ -41,11 +41,11 @@ export function InstallPrompt({ variant = 'banner' }: InstallPromptProps) {
     </p>
   ) : canPrompt ? (
     <p className="text-sm leading-snug text-zinc-400">
-      Install Consifit to hide the browser bar and use it like an app.
+      Install Consifit — opens full-screen from the home icon, no Chrome bar.
     </p>
   ) : (
     <p className="text-sm leading-snug text-zinc-400">
-      Browser menu → <span className="text-zinc-200">Install app</span> /{' '}
+      Chrome menu (⋮) → <span className="text-zinc-200">Install app</span> or{' '}
       <span className="text-zinc-200">Add to Home screen</span>, then open from
       the icon.
     </p>
@@ -60,7 +60,7 @@ export function InstallPrompt({ variant = 'banner' }: InstallPromptProps) {
           <button
             type="button"
             onClick={() => void install()}
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white active:bg-emerald-500"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-semibold text-zinc-950 active:bg-emerald-400"
           >
             <Download className="h-4 w-4" />
             Install Consifit
@@ -81,7 +81,7 @@ export function InstallPrompt({ variant = 'banner' }: InstallPromptProps) {
           <button
             type="button"
             onClick={() => void install()}
-            className="flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white active:bg-emerald-500"
+            className="flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-semibold text-zinc-950 active:bg-emerald-400"
           >
             <Download className="h-4 w-4" />
             Install

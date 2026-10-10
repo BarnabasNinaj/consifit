@@ -140,7 +140,7 @@ export function RestTimer({
           <button
             type="button"
             onClick={onSkip}
-            className="flex min-h-12 items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 text-sm font-semibold text-white active:bg-emerald-500"
+            className="flex min-h-12 items-center justify-center gap-1.5 rounded-2xl bg-emerald-500 text-sm font-semibold text-zinc-950 active:bg-emerald-400"
           >
             <SkipForward className="h-4 w-4" /> Skip
           </button>

@@ -1,11 +1,8 @@
-export type ExerciseCategory = 'Pull' | 'Core' | string;
-
 export type AssistanceType = 'bodyweight' | 'band';
 
 export interface Exercise {
   id: string;
   name: string;
-  category: ExerciseCategory;
 }
 
 export interface SetLog {
@@ -26,7 +23,8 @@ export interface WorkoutSession {
 
 export interface Settings {
   restSeconds: number;
-  bandPresets: string[];
+  /** Quick-add buttons on the rest timer, in seconds */
+  restExtendSeconds: [number, number];
 }
 
 export interface AppData {
