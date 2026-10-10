@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, Upload, X } from 'lucide-react';
 import type { WorkoutStore } from '../hooks/useWorkoutStore';
+import { InstallPrompt } from './InstallPrompt';
 import { PageTitle } from './PageTitle';
 import { Sheet } from './Sheet';
 
@@ -75,6 +76,8 @@ export function SettingsPanel({ open, store, onClose }: SettingsPanelProps) {
             </button>
           }
         />
+
+        <InstallPrompt variant="card" />
 
         <section className="mb-5 space-y-3 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4">
           <h3 className="text-sm font-semibold text-zinc-200">Rest timer</h3>

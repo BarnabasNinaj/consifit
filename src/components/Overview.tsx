@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight, ChevronUp, Menu, Shuffle } from 'lucide-react';
 import type { WorkoutStore } from '../hooks/useWorkoutStore';
 import { getTodayYesterdayTotals } from '../utils/stats';
+import { InstallPrompt } from './InstallPrompt';
 import { PageTitle } from './PageTitle';
 
 interface OverviewProps {
@@ -48,6 +49,7 @@ export function Overview({ store, onStart, onOpenMenu }: OverviewProps) {
           </button>
         }
       />
+      <InstallPrompt variant="banner" />
 
       <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pb-3">
         {exercises.map((ex, i) => {

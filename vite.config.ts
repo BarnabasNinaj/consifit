@@ -11,6 +11,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icons/*.png'],
       manifest: {
+        id: '/',
         name: 'Consifit',
         short_name: 'Consifit',
         description:
@@ -18,9 +19,11 @@ export default defineConfig({
         theme_color: '#09090b',
         background_color: '#09090b',
         display: 'standalone',
+        display_override: ['standalone', 'minimal-ui'],
         orientation: 'portrait',
         start_url: '/',
         scope: '/',
+        lang: 'en',
         categories: ['fitness', 'health', 'lifestyle'],
         icons: [
           {
