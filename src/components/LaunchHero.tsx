@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { ArrowUpRight } from 'lucide-react';
 
 const ROASTS = [
   'You weak, bitch.',
@@ -100,9 +99,8 @@ export function LaunchHero({ onEnter }: LaunchHeroProps) {
             }`}
             aria-label="Let's go — open Train Hard"
           >
-            <ArrowUpRight className="mb-1.5 h-8 w-8" strokeWidth={2.5} />
-            <span className="text-2xl font-bold tracking-tight">
-              Let&apos;s go
+            <span className="text-[1.85rem] font-bold leading-none tracking-tight">
+              LET&apos;S GO
             </span>
           </button>
         </div>
