@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="112" fill="#09090b"/>
+  <!-- Consistency ring — open C -->
+  <path d="M368 148A160 160 0 1 0 368 364" stroke="#34d399" stroke-width="48" stroke-linecap="round"/>
+  <!-- Pull-up bar -->
+  <path d="M160 256h192" stroke="#6ee7b7" stroke-width="40" stroke-linecap="round"/>
+  <circle cx="160" cy="256" r="28" fill="#a7f3d0"/>
+  <circle cx="352" cy="256" r="28" fill="#a7f3d0"/>
+  <!-- Discipline ticks -->
+  <path d="M400 192v32M432 224v32M464 256v32" stroke="#34d399" stroke-width="20" stroke-linecap="round" opacity="0.9"/>
+</svg>
