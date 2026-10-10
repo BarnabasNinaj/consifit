@@ -5,11 +5,7 @@ import { Resvg } from '@resvg/resvg-js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-/**
- * Android adaptive icons (Pixel) crop to circle/squircle.
- * - any: full-bleed mark (launcher may still mask)
- * - maskable: mark scaled to ~66% safe zone so nothing is clipped
- */
+/** Climb mark — stacked up-chevrons on Consifit black. */
 function markSvg(scale = 1) {
   const g =
     scale === 1
@@ -18,8 +14,9 @@ function markSvg(scale = 1) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <rect width="512" height="512" fill="#09090b"/>
   <g${g}>
-    <path d="M368 148A160 160 0 1 0 368 364" stroke="#34d399" stroke-width="48" stroke-linecap="round"/>
-    <path d="M160 256h192" stroke="#6ee7b7" stroke-width="40" stroke-linecap="round"/>
+    <path d="M128 320L256 208L384 320" stroke="#34d399" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M128 240L256 128L384 240" stroke="#6ee7b7" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M192 400H320" stroke="#a7f3d0" stroke-width="40" stroke-linecap="round"/>
   </g>
 </svg>`;
 }
@@ -35,9 +32,9 @@ function render(svgSource, size) {
 }
 
 mkdirSync(join(root, 'public', 'icons'), { recursive: true });
+writeFileSync(join(root, 'public', 'favicon.svg'), anySvg);
 
 const jobs = [
-  [join(root, 'public', 'favicon.svg'), null, null],
   [join(root, 'public', 'icons', 'icon-192.png'), anySvg, 192],
   [join(root, 'public', 'icons', 'icon-512.png'), anySvg, 512],
   [join(root, 'public', 'icons', 'icon-192-maskable.png'), maskableSvg, 192],
@@ -45,10 +42,7 @@ const jobs = [
   [join(root, 'public', 'apple-touch-icon.png'), anySvg, 180],
 ];
 
-writeFileSync(join(root, 'public', 'favicon.svg'), anySvg);
-
 for (const [path, source, size] of jobs) {
-  if (source == null || size == null) continue;
   writeFileSync(path, render(source, size));
   console.log(`wrote ${path} (${size}x${size})`);
 }

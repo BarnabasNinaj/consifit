@@ -7,7 +7,7 @@ interface ConsifitLogoProps {
 
 /**
  * Consifit mark — Consistently Fit.
- * Open “C” ring (consistency loop) + pull-up bar (the work).
+ * Climb: stacked up-chevrons (keep going up).
  */
 export function ConsifitLogo({
   className = 'h-8 w-8',
@@ -24,17 +24,23 @@ export function ConsifitLogo({
       role={withWordmark ? undefined : 'img'}
     >
       {!withWordmark && <title>{title}</title>}
-      {/* Consistency ring — open C */}
       <path
-        d="M46 18.5A20 20 0 1 0 46 45.5"
+        d="M16 40L32 26L48 40"
         stroke="#34d399"
-        strokeWidth="6"
+        strokeWidth="5.5"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      {/* Pull-up bar */}
       <path
-        d="M20 32h24"
+        d="M16 30L32 16L48 30"
         stroke="#6ee7b7"
+        strokeWidth="5.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M24 50H40"
+        stroke="#a7f3d0"
         strokeWidth="5"
         strokeLinecap="round"
       />
