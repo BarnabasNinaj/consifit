@@ -86,7 +86,7 @@ export function SettingsView({ store }: SettingsViewProps) {
       <div className="flex flex-col gap-3">
         <SettingsSection title="Rest">
           <div className="flex items-end gap-1.5">
-            <div className="min-w-0 flex-[1.1]">
+            <div className="min-w-0 flex-1">
               <label
                 className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-zinc-600"
                 htmlFor="rest"
@@ -104,11 +104,11 @@ export function SettingsView({ store }: SettingsViewProps) {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') saveRest();
                 }}
-                className="min-h-9 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-1.5 text-center text-sm tabular-nums text-zinc-100 focus:border-emerald-500/40 focus:outline-none"
+                className="min-h-10 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-1 text-center text-sm tabular-nums text-zinc-100 focus:border-emerald-500/40 focus:outline-none"
               />
             </div>
             {extendInputs.map((value, i) => (
-              <div key={i} className="w-[4.25rem] shrink-0">
+              <div key={i} className="min-w-0 flex-1">
                 <label
                   className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-zinc-600"
                   htmlFor={`rest-ext-${i}`}
@@ -130,7 +130,7 @@ export function SettingsView({ store }: SettingsViewProps) {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') saveRest();
                   }}
-                  className="min-h-9 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-1 text-center text-sm tabular-nums text-zinc-100 focus:border-emerald-500/40 focus:outline-none"
+                  className="min-h-10 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-1 text-center text-sm tabular-nums text-zinc-100 focus:border-emerald-500/40 focus:outline-none"
                   aria-label={`Quick add ${i + 1} seconds`}
                 />
               </div>
@@ -138,7 +138,7 @@ export function SettingsView({ store }: SettingsViewProps) {
             <button
               type="button"
               onClick={saveRest}
-              className="min-h-9 shrink-0 rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-zinc-950 active:bg-emerald-400"
+              className="flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-zinc-950 active:bg-emerald-400"
             >
               Save
             </button>

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import type { Exercise } from '../types';
 import type { WorkoutStore } from '../hooks/useWorkoutStore';
 
@@ -46,9 +46,8 @@ export function ExerciseEditor({ store }: ExerciseEditorProps) {
         />
         <button
           type="submit"
-          className="flex min-h-10 shrink-0 items-center justify-center gap-1 rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-zinc-950 active:bg-emerald-400"
+          className="flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-zinc-950 active:bg-emerald-400"
         >
-          <Plus className="h-3.5 w-3.5" />
           {editing ? 'Save' : 'Add'}
         </button>
         {editing && (
