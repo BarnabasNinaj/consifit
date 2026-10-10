@@ -75,32 +75,42 @@ export function LaunchHero({ onEnter }: LaunchHeroProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden overscroll-none px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-      <div className="flex min-h-0 flex-1 flex-col justify-center py-4">
+      <div className="flex min-h-0 shrink-0 flex-col justify-end pb-2 pt-14">
         <p className="mb-3 shrink-0 text-sm font-medium text-zinc-500">
           Before you touch the bar…
         </p>
-        <h1 className="max-w-[14ch] text-[clamp(1.85rem,7.2vh,2.75rem)] font-bold leading-[1.05] tracking-tight text-balance text-zinc-50">
+        <h1 className="max-w-[14ch] text-[clamp(1.75rem,6.5vh,2.5rem)] font-bold leading-[1.05] tracking-tight text-balance text-zinc-50">
           {line}
         </h1>
       </div>
 
-      <div className="flex shrink-0 flex-col items-center gap-3 pb-1">
-        <button
-          type="button"
-          onPointerDown={() => setPressed(true)}
-          onPointerUp={() => setPressed(false)}
-          onPointerLeave={() => setPressed(false)}
-          onClick={onEnter}
-          className={`flex size-[min(9rem,28vmin)] touch-manipulation flex-col items-center justify-center rounded-full bg-emerald-500 text-zinc-950 shadow-[0_0_48px_rgba(16,185,129,0.35)] transition duration-150 active:scale-95 ${
-            pressed ? 'scale-95' : 'scale-100'
-          }`}
-          aria-label="Let's go — open Train Hard"
-        >
-          <ArrowUpRight className="mb-1 h-6 w-6" strokeWidth={2.5} />
-          <span className="text-lg font-bold tracking-tight">Let&apos;s go</span>
-        </button>
-        <p className="text-xs text-zinc-600">Tap in. No mercy set.</p>
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+        <div className="hero-cta-wrap relative flex items-center justify-center">
+          <span className="hero-pulse-ring" aria-hidden />
+          <span className="hero-pulse-ring hero-pulse-ring--delay" aria-hidden />
+          <span className="hero-pulse-ring hero-pulse-ring--delay-2" aria-hidden />
+          <button
+            type="button"
+            onPointerDown={() => setPressed(true)}
+            onPointerUp={() => setPressed(false)}
+            onPointerLeave={() => setPressed(false)}
+            onClick={onEnter}
+            className={`hero-cta relative z-10 flex size-[min(13.5rem,48vmin)] touch-manipulation flex-col items-center justify-center rounded-full bg-emerald-500 text-zinc-950 transition duration-150 active:scale-95 ${
+              pressed ? 'scale-95' : 'scale-100'
+            }`}
+            aria-label="Let's go — open Train Hard"
+          >
+            <ArrowUpRight className="mb-1.5 h-8 w-8" strokeWidth={2.5} />
+            <span className="text-2xl font-bold tracking-tight">
+              Let&apos;s go
+            </span>
+          </button>
+        </div>
       </div>
+
+      <p className="shrink-0 pb-1 text-center text-sm text-zinc-600">
+        Tap in. No mercy set.
+      </p>
     </div>
   );
 }

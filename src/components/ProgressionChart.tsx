@@ -51,7 +51,7 @@ export function ProgressionChart({
       <p className="mb-2 shrink-0 px-1 text-xs font-medium uppercase tracking-wider text-zinc-400">
         Last {data.length} workout{data.length === 1 ? '' : 's'}
       </p>
-      <div className="relative min-h-[12rem] w-full flex-1">
+      <div className="chart-surface relative min-h-[12rem] w-full flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={data}
@@ -82,6 +82,7 @@ export function ProgressionChart({
               width={40}
             />
             <Tooltip
+              cursor={false}
               contentStyle={{
                 background: '#18181b',
                 border: '1px solid #52525b',
@@ -93,6 +94,7 @@ export function ProgressionChart({
             />
             <Legend
               wrapperStyle={{ fontSize: 12, paddingTop: 4 }}
+              iconType="circle"
               formatter={(value) => (
                 <span
                   style={{
@@ -111,7 +113,8 @@ export function ProgressionChart({
               stroke={BODY_COLOR}
               strokeWidth={2.75}
               dot={{ r: 3.5, fill: BODY_COLOR, strokeWidth: 0 }}
-              activeDot={{ r: 6, fill: BODY_COLOR }}
+              activeDot={{ r: 5, fill: BODY_COLOR, strokeWidth: 0 }}
+              isAnimationActive={false}
             >
               <LabelList
                 dataKey="bodyweightReps"
@@ -128,7 +131,8 @@ export function ProgressionChart({
               stroke={BAND_COLOR}
               strokeWidth={2.75}
               dot={{ r: 3.5, fill: BAND_COLOR, strokeWidth: 0 }}
-              activeDot={{ r: 6, fill: BAND_COLOR }}
+              activeDot={{ r: 5, fill: BAND_COLOR, strokeWidth: 0 }}
+              isAnimationActive={false}
             >
               <LabelList
                 dataKey="bandReps"
