@@ -6,7 +6,7 @@ import {
   Minus,
   Plus,
 } from 'lucide-react';
-import type { AssistanceType } from '../types';
+import type { AssistanceType, WorkoutSession } from '../types';
 import type { WorkoutStore } from '../hooks/useWorkoutStore';
 import { useRestTimer } from '../hooks/useRestTimer';
 import { formatDuration, isSameDay } from '../utils/format';
@@ -15,6 +15,7 @@ import {
   getPreviousSession,
   sumSets,
 } from '../utils/stats';
+import { SessionEditor } from './SessionEditor';
 
 interface WorkoutPlayerProps {
   store: WorkoutStore;
@@ -35,6 +36,7 @@ export function WorkoutPlayer({
   });
   const [reps, setReps] = useState(8);
   const [assistance, setAssistance] = useState<AssistanceType>('bodyweight');
+  const [editing, setEditing] = useState<WorkoutSession | null>(null);
 
   const timer = useRestTimer(store.data.settings.restSeconds);
   const exercise = exercises[index] ?? null;
@@ -68,17 +70,35 @@ export function WorkoutPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timer.phase]);
 
-  const todaySets = useMemo(() => {
+  const todaySessions = useMemo(() => {
     if (!exercise) return [];
     return store.data.sessions
-      .filter((s) => s.exerciseId === exercise.id && isSameDay(s.startedAt))
-      .flatMap((s) => s.sets)
-      .sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
+      .filter(
+        (s) =>
+          s.exerciseId === exercise.id &&
+          isSameDay(s.startedAt) &&
+          s.sets.length > 0,
+      )
+      .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
   }, [exercise, store.data.sessions]);
+
+  const todaySets = useMemo(
+    () =>
+      todaySessions
+        .flatMap((s) => s.sets)
+        .sort((a, b) => a.loggedAt.localeCompare(b.loggedAt)),
+    [todaySessions],
+  );
 
   const todayTotals = todaySets.length > 0 ? sumSets(todaySets) : null;
   const todayReps = todayTotals?.totalReps ?? 0;
   const todaySetCount = todaySets.length;
+  const todayEditable =
+    todaySessions.length === 1
+      ? todaySessions[0]!
+      : todaySessions.find((s) => !s.finishedAt) ??
+        todaySessions[todaySessions.length - 1] ??
+        null;
   const lastSession = useMemo(
     () =>
       getLastSessionSummary(
@@ -183,9 +203,24 @@ export function WorkoutPlayer({
               </p>
             </div>
           </div>
-          <div className="px-3 py-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (todayEditable) setEditing(todayEditable);
+            }}
+            disabled={!todayEditable || resting}
+            className="px-3 py-3 text-left disabled:opacity-100"
+            aria-label={
+              todayEditable ? "Edit today's sets" : 'No sets logged today'
+            }
+          >
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
               Today
+              {todayEditable ? (
+                <span className="ml-1 font-medium normal-case tracking-normal text-emerald-500/80">
+                  edit
+                </span>
+              ) : null}
             </p>
             <p className="mt-2 font-mono text-lg font-bold leading-none tabular-nums text-zinc-50">
               {todayReps}{' '}
@@ -208,7 +243,7 @@ export function WorkoutPlayer({
                 <span className="text-band/55">band</span>
               </p>
             </div>
-          </div>
+          </button>
         </div>
       </header>
 
@@ -350,6 +385,13 @@ export function WorkoutPlayer({
           <ChevronRight className="h-4 w-4 shrink-0" />
         </button>
       </div>
+
+      <SessionEditor
+        store={store}
+        session={editing}
+        exerciseName={exercise.name}
+        onClose={() => setEditing(null)}
+      />
     </div>
   );
 }

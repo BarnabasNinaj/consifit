@@ -15,6 +15,7 @@ import type {
   AppData,
   AssistanceType,
   Exercise,
+  SetLog,
   Settings,
   WorkoutSession,
 } from '../types';
@@ -238,6 +239,48 @@ export function useWorkoutStore() {
     [readStored, writeStored],
   );
 
+  const updateSet = useCallback(
+    (
+      sessionId: string,
+      setId: string,
+      patch: Partial<Pick<SetLog, 'reps' | 'assistance' | 'bandLevel'>>,
+    ) => {
+      const prev = readStored();
+      writeStored({
+        ...prev,
+        sessions: prev.sessions.map((s) => {
+          if (s.id !== sessionId) return s;
+          return {
+            ...s,
+            sets: s.sets.map((set) => {
+              if (set.id !== setId) return set;
+              const next: SetLog = { ...set, ...patch };
+              if (typeof patch.reps === 'number') {
+                next.reps = Math.max(1, Math.round(patch.reps));
+              }
+              if (next.assistance === 'bodyweight') {
+                delete next.bandLevel;
+              }
+              return next;
+            }),
+          };
+        }),
+      });
+    },
+    [readStored, writeStored],
+  );
+
+  const deleteSession = useCallback(
+    (sessionId: string) => {
+      const prev = readStored();
+      writeStored({
+        ...prev,
+        sessions: prev.sessions.filter((s) => s.id !== sessionId),
+      });
+    },
+    [readStored, writeStored],
+  );
+
   const finishWorkout = useCallback(
     (sessionId: string) => {
       const prev = readStored();
@@ -325,6 +368,8 @@ export function useWorkoutStore() {
     startOrResumeSession,
     logSet,
     removeSet,
+    updateSet,
+    deleteSession,
     finishWorkout,
     discardEmptySession,
     updateSettings,

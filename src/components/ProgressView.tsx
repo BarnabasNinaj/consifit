@@ -1,12 +1,16 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import type { WorkoutSession } from '../types';
 import type { WorkoutStore } from '../hooks/useWorkoutStore';
 import {
   getExerciseProgressStats,
+  getExerciseSessions,
   getProgressionData,
 } from '../utils/stats';
+import { HistorySheet } from './HistorySheet';
 import { PageTitle } from './PageTitle';
 import { ProgressionChart } from './ProgressionChart';
+import { SessionEditor } from './SessionEditor';
 
 interface ProgressViewProps {
   store: WorkoutStore;
@@ -45,6 +49,8 @@ function StatCell({
 export function ProgressView({ store }: ProgressViewProps) {
   const exercises = store.data.exercises;
   const [index, setIndex] = useState(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [editing, setEditing] = useState<WorkoutSession | null>(null);
 
   const safeIndex =
     exercises.length === 0
@@ -65,6 +71,11 @@ export function ProgressView({ store }: ProgressViewProps) {
       active
         ? getExerciseProgressStats(store.data.sessions, active.id)
         : null,
+    [active, store.data.sessions],
+  );
+
+  const historySessions = useMemo(
+    () => (active ? getExerciseSessions(store.data.sessions, active.id) : []),
     [active, store.data.sessions],
   );
 
@@ -141,7 +152,22 @@ export function ProgressView({ store }: ProgressViewProps) {
             className="min-h-0 flex-1"
           />
 
-          <div className="mt-3 flex shrink-0 gap-2">
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
+            disabled={historySessions.length === 0}
+            className="mt-3 flex h-12 w-full shrink-0 items-center justify-center gap-1.5 rounded-2xl bg-zinc-950 text-sm font-semibold text-zinc-200 ring-1 ring-zinc-800 active:bg-zinc-900 disabled:opacity-40"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Edit history
+            {historySessions.length > 0 ? (
+              <span className="tabular-nums text-zinc-500">
+                ({historySessions.length})
+              </span>
+            ) : null}
+          </button>
+
+          <div className="mt-2 flex shrink-0 gap-2">
             <button
               type="button"
               onClick={() => go(-1)}
@@ -161,6 +187,26 @@ export function ProgressView({ store }: ProgressViewProps) {
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
+
+          <HistorySheet
+            open={historyOpen && !editing}
+            exerciseName={active.name}
+            sessions={historySessions}
+            onClose={() => setHistoryOpen(false)}
+            onEdit={(session) => {
+              setEditing(session);
+              setHistoryOpen(false);
+            }}
+          />
+          <SessionEditor
+            store={store}
+            session={editing}
+            exerciseName={active.name}
+            onClose={() => {
+              setEditing(null);
+              setHistoryOpen(true);
+            }}
+          />
         </>
       ) : null}
     </div>
